@@ -99,7 +99,7 @@ INT WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE, LPTSTR, INT)
 
 		mg.Input(dt);
 		mg.Update(dt, hWnd);
-		mg.Draw();
+		mg.Draw(dt);
 
 		dt = ::GetTickCount() - st;
 		st = ::GetTickCount();

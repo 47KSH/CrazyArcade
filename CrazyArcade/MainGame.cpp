@@ -6,6 +6,12 @@ MainGame::MainGame()
 , hMemDC(NULL)
 , hMemBitmap(NULL)
 , hOldMemBitmap(NULL)
+, update_delay(100)
+, update_dt_any(0)
+, update_dt_mov(0)
+, input_dt(0)
+, draw_dt(0)
+, C_speed(80)
 {
 	hStage = NULL;
 	hCursor = NULL;
@@ -18,6 +24,7 @@ MainGame::MainGame()
 	button_snd = false;
 	button_03 = false;
 	door = true;
+	stop = false;
 	Animation = 0;
 	MainState = Login;
 	Ccenter = { 600, 530 };
@@ -50,23 +57,47 @@ void MainGame::Input(DWORD tick)
 
 	FMOD_System_Update(f_System); // 사운드가 스트리밍 되면서 나올 수 있게...
 
-	CMove = idle;
+
 	if (InputDevice[VK_LEFT])
 	{
 		CMove = left;
+		stop = false;
+		input_dt = 0;
 	}
 	if (InputDevice[VK_RIGHT])
 	{
 		CMove = right;
+		stop = false;
+		input_dt = 0;
 	}
-	if(InputDevice[VK_UP])
+	if (InputDevice[VK_UP])
 	{
 		CMove = up;
+		stop = false;
+		input_dt = 0;
 	}
-	if(InputDevice[VK_DOWN])
+	if (InputDevice[VK_DOWN])
 	{
 		CMove = down;
+		stop = false;
+		input_dt = 0;
 	}
+	if (InputDevice[VK_SPACE])
+	{
+		C_speed = 90;
+	}
+	if (!InputDevice[VK_LEFT] && !InputDevice[VK_RIGHT] && !InputDevice[VK_DOWN] && !InputDevice[VK_SPACE] && !InputDevice[VK_UP])
+	{
+		stop = true;
+		if (input_dt > 3000)
+		{
+			CMove = idle;
+			input_dt -= 3000;
+		}
+		input_dt += tick;
+	}
+
+
 }
 void MainGame::Update(DWORD tick, HWND hWnd)
 {
@@ -94,7 +125,7 @@ void MainGame::Update(DWORD tick, HWND hWnd)
 			button_01 = false;
 			button_02 = false;
 		}
-	}	
+	}
 
 	else if (MainState == HowTo)
 	{
@@ -103,7 +134,7 @@ void MainGame::Update(DWORD tick, HWND hWnd)
 		else
 		{
 			button_snd = true;
-			button_03 = false;			
+			button_03 = false;
 		}
 	}
 
@@ -119,39 +150,78 @@ void MainGame::Update(DWORD tick, HWND hWnd)
 			door = !door;
 		}
 
-		if (CMove == left)
+		if (update_dt_any > update_delay)
 		{
-			if (Ccenter.x < 45)
-				Ccenter.x += 1;
-			Ccenter.x -= 1;
+			if ((CMove == left) && !stop)
+			{
+				if (Animation < 280)
+					Animation += 70;
+				else
+					Animation = 0;
+			}
+			if ((CMove == right) && !stop)
+			{
+				if (Animation < 280)
+					Animation += 70;
+				else
+					Animation = 0;
+			}
+			if ((CMove == up) && !stop)
+			{
+				if (Animation < 280)
+					Animation += 70;
+				else
+					Animation = 0;
+			}
+			if ((CMove == down) && !stop)
+			{
+				if (Animation < 280)
+					Animation += 70;
+				else
+					Animation = 0;
+			}
+			if (CMove == idle)
+			{
+				if (Animation < 280)
+					Animation += 70;
+				else
+					Animation = 140;
+			}
+			update_dt_any -= update_delay;
 		}
-		if (CMove == right)
+		if (update_dt_mov > (update_delay - C_speed))
 		{
-			if (Ccenter.x > 600)
-				Ccenter.x -= 1;
-			Ccenter.x += 1;
+			if ((CMove == left) && !stop)
+			{
+				if (Ccenter.x < 45)
+					Ccenter.x += 5;
+				Ccenter.x -= 5;
+			}
+			if ((CMove == right) && !stop)
+			{
+				if (Ccenter.x > 600)
+					Ccenter.x -= 5;
+				Ccenter.x += 5;
+			}
+			if ((CMove == up) && !stop)
+			{
+				if (Ccenter.y < 45)
+					Ccenter.y += 5;
+				Ccenter.y -= 5;
+			}
+			if ((CMove == down) && !stop)
+			{
+				if (Ccenter.y > 535)
+					Ccenter.y -= 5;
+				Ccenter.y += 5;
+			}
+			update_dt_mov -= (update_delay - C_speed);
 		}
-		if (CMove == up)
-		{
-			if (Ccenter.y < 45)
-				Ccenter.y += 1;
-			Ccenter.y -= 1;
-		}
-		if (CMove == down)
-		{
-			if (Ccenter.y > 535)
-				Ccenter.y -= 1;
-			Ccenter.y += 1;
-		}
-		
+		update_dt_any += tick;
+		update_dt_mov += tick;
 	}
-
-
-
-
-
 }
-void MainGame::Draw(void)
+void MainGame::Draw(DWORD tick)
 {
 
 	Rect rc;
@@ -244,31 +314,43 @@ void MainGame::Draw(void)
 
 		if (CMove == left)
 		{
-			::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, Animation, 0, 70, 80, RGB(0, 255, 0));
+			if (stop)
+				::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, 0, 0, 70, 80, RGB(0, 255, 0));
+			else
+				::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, Animation, 0, 70, 80, RGB(0, 255, 0));
 		}
 		if (CMove == right)
 		{
-			::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, Animation, 80, 70, 80, RGB(0, 255, 0));
+			if (stop)
+				::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, 70, 80, 70, 80, RGB(0, 255, 0));
+			else
+				::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, Animation, 80, 70, 80, RGB(0, 255, 0));
+
 		}
 		if (CMove == up)
 		{
-			::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, Animation, 160, 70, 80, RGB(0, 255, 0));
+			if (stop)
+				::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, 0, 160, 70, 80, RGB(0, 255, 0));
+			else
+				::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, Animation, 160, 70, 80, RGB(0, 255, 0));
 		}
 		if (CMove == down)
 		{
-			::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, Animation, 240, 70, 80, RGB(0, 255, 0));
+			if (stop)
+				::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, 70, 240, 70, 80, RGB(0, 255, 0));
+			else
+				::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, Animation, 240, 70, 80, RGB(0, 255, 0));
 		}
 		if (CMove == idle)
 		{
-			for (int i = 0; i < 5; i+=70)
-			::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, i, 320, 70, 80, RGB(0, 255, 0));
+			::GdiTransparentBlt(hMemDC, Ccenter.x - 35, Ccenter.y - 40, 70, 80, hBackgroundDC, Animation, 320, 70, 80, RGB(0, 255, 0));
 		}
-		
-		
+
+
 		::SelectObject(hBackgroundDC, hOldBitmap);
 		::DeleteDC(hBackgroundDC);
 	}
-	
+
 
 	::BitBlt(hMainDC, 0, 0, rc.width(), rc.height(), hMemDC, 0, 0, SRCCOPY);
 
@@ -321,7 +403,7 @@ void MainGame::init(void)
 	int tx, ty;
 	tx = ty = 0;
 	for (int y = 0; y < 13; y++)
-	{		
+	{
 		for (int x = 0; x < 15; x++)
 		{
 			Tile[y][x].left = 5 + tx;
@@ -343,8 +425,8 @@ void MainGame::init(void)
 	FMOD_System_CreateSound(f_System, "room.mp3", FMOD_LOOP_NORMAL, 0, &sound[2]);
 	FMOD_System_CreateSound(f_System, "bt_on.mp3", FMOD_DEFAULT, 0, &sound[3]);
 	FMOD_System_PlaySound(f_System, FMOD_CHANNEL_FREE, sound[0], 0, &channel[0]); // 해당 사운드를 재생
-	FMOD_Channel_SetVolume(channel[0], 0.7f);
-	FMOD_Channel_SetVolume(channel[1], 1);
+	FMOD_Channel_SetVolume(channel[0], 1.f);
+	FMOD_Channel_SetVolume(channel[1], 1.f);
 }
 void MainGame::release(void)
 {

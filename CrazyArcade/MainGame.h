@@ -29,7 +29,7 @@ public :
 	void Attach(HWND);
 	void Input(DWORD tick);
 	void Update(DWORD tick, HWND hWnd);
-	void Draw(void);
+	void Draw(DWORD tick);
 	void Load();
 
 private :
@@ -59,12 +59,19 @@ private :
 	bool button_snd;
 	int MainState;
 	int CMove;
+	int C_speed;
 	int Animation;
+	bool stop;
 	bool button_03;
 	bool door;
 	Size sBitmap;
 	Size sGray;
 	Rect Tile[13][15];
+	DWORD update_delay;
+	DWORD update_dt_any;
+	DWORD update_dt_mov;
+	DWORD draw_dt;
+	DWORD input_dt;
 
 private:
 	FMOD_SYSTEM* f_System; // FMOD 사운드 시스템 변수 선언
